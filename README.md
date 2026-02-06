@@ -12,6 +12,87 @@ Keeper 會獲得一些獎勵，如果都沒有人做項目方應該要寫排程�
 
 本次完全 AI 實作，但跟 AI 討論功能到一半後發現 cetus 已有 DCA 功能，不過就醬吧。順便做做練習
 
+## 主要的 struct
+
+### 1. `DCAConfig` (全域設定)
+
+```rust
+public struct DCAConfig has key {
+    id: UID,
+    total_fee_bps: u64,
+    keeper_share_rate: u64,
+    min_dca_limit: u64,
+    beneficiary: address,
+}
+
+```
+
+* **能力**: `key` (只有 key)
+* **角色**: **Shared Object (共享物件)**
+* 供所有人讀取費率，唯一的 `fun update_config` 則需要帶 AdminCap 才能更新。
+
+---
+
+### 2. `DCAPlan<phantom T>` (用戶的定投計畫)
+
+```rust
+public struct DCAPlan<phantom T> has key {
+    id: UID,
+    owner: address,
+    balance: Balance<T>,
+    dca_amount: u64,
+    last_execution: u64,
+    interval: u64,
+}
+
+```
+
+* **能力**: `key` (只有 key)
+* **角色**: **Shared Object (共享物件)**，但帶有邏輯上的擁有權 (`owner` 欄位)。
+* **關鍵點**：它必須是 **Shared Object**，而不是 Owned Object。原因在於 Keeper 或項目方才能去幫她實作定投的功能
+
+---
+
+### 3. `AdminCap` (管理員權限)
+
+```rust
+public struct AdminCap has key, store { id: UID }
+
+```
+
+* **能力**: `key`, `store`
+* **角色**: **Owned Object (資產/權限憑證)**
+
+---
+
+### 4. `DcaRequest<phantom T>` (Hot Potato)
+
+```rust
+public struct DcaRequest<phantom T> {
+    balance: Balance<T>,
+    fee_coin: Coin<T>,
+    keeper_coin: Coin<T>,
+    owner: address
+}
+```
+
+* **角色**: **Transient Struct (暫態結構) / Linear Type**
+* **設計用意 (核心亮點)**:
+* 當你在 `start_dca` 創造了這個 Struct，Move VM 會追蹤它。
+* 如果函數執行結束（或者 PTB 結束），這個 Struct 還活著（沒有被解構/銷毀），**VM 會直接報錯 (Compile Error 或 Runtime Abort)**。
+* **效果**：這強制 Keeper 拿到這個 Request 後，**必須** 呼叫能夠銷毀它的函數（也就是 `resolve_via_deepbook`）。Keeper **不可能** 拿了 `start_dca` 的錢就跑，因為他沒有任何手段可以把這個沒有 `store` 的 Struct 存起來，也無法讓它憑空消失。
+
+---
+
+### 總結分析表
+
+| Struct | 能力 (Abilities) | 類型 | 設計用意 | 正確性 |
+| --- | --- | --- | --- | --- |
+| **DCAConfig** | `key` | Shared | 全域設定，公開讀取，Admin 修改 | ✅ 正確 |
+| **DCAPlan** | `key` | Shared | 用戶金庫，開放 Keeper 觸發，邏輯鎖定資金 | ✅ 正確 |
+| **AdminCap** | `key, store` | Owned | 管理員權限，可轉移 (至多簽/DAO) | ✅ 正確 |
+| **DcaRequest** | **(無)** | Hot Potato | 強制執行原子操作，確保資金安全 | ✅ **完美** |
+
 ## 使用 AI 遇到的各種坑
 
 ### cetus vs DeepBook
