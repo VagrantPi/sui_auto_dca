@@ -49,7 +49,7 @@ public struct DCAPlan<phantom T> has key {
 
 * **能力**: `key` (只有 key)
 * **角色**: **Shared Object (共享物件)**，但帶有邏輯上的擁有權 (`owner` 欄位)。
-* **關鍵點**：它必須是 **Shared Object**，而不是 Owned Object。原因在於 Keeper 或項目方才能去幫她實作定投的功能
+* **關鍵點**：它必須是 **Shared Object**，而不是 Owned Object。原因在於 Keeper 或項目方才能去幫它實作定投的功能
 
 ---
 

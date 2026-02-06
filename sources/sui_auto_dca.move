@@ -186,7 +186,7 @@ public fun resolve_via_deepbook<T>(
     // 4. 結算給用戶
     transfer::public_transfer(sui_coin, owner);
 
-    // 5. 處理剩餘款 (如果有)
+    // 5. 這裡的 base_remaining 是「沒用完的零錢」 (例如 0.1) 我們把它轉給 Owner 的錢包
     if (base_remaining.value() > 0) {
         transfer::public_transfer(base_remaining, owner);
     } else {
