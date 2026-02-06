@@ -1,0 +1,17 @@
+[package]
+name = "sui_auto_dca"
+edition = "2024"
+
+[dependencies]
+# 1. 強制覆寫 Move 標準函式庫 (解決 0x1 衝突)
+MoveStdlib = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/move-stdlib", rev = "framework/testnet", override = true }
+
+# 2. 強制覆寫 Sui 框架 (解決 0x2 衝突)
+Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/testnet", override = true }
+
+# 3. DeepBook 依賴 (維持不變)
+deepbook = { git = "https://github.com/MystenLabs/deepbookv3.git", subdir = "packages/deepbook", rev = "main" }
+token = { git = "https://github.com/MystenLabs/deepbookv3.git", subdir = "packages/token", rev = "main" }
+
+[addresses]
+sui_auto_dca = "0x0"
